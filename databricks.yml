@@ -1,0 +1,56 @@
+# Databricks Asset Bundle : décrit en code tout ce qu'on déploie dans Databricks.
+# Commandes : databricks bundle validate | deploy | run | destroy
+
+bundle:
+  name: portail-traitements
+
+variables:
+  catalog:
+    description: Catalogue Unity Catalog
+    default: workspace
+  schema:
+    description: Schéma du projet
+    default: portail
+
+targets:
+  dev:
+    # Mode développement : les ressources sont préfixées "[dev <ton nom>]"
+    # et les plannings sont mis en pause, pour ne jamais gêner la "prod".
+    mode: development
+    default: true
+    workspace:
+      host: https://<ton-url-workspace>.cloud.databricks.com
+
+resources:
+  jobs:
+    import_budget:
+      name: import_budget
+
+      # Paramètres du job : ce sont eux que l'application enverra via l'API run-now.
+      parameters:
+        - name: periode
+          default: "2026-10"
+        - name: fichier
+          default: /Volumes/${var.catalog}/${var.schema}/fichiers/budget_2026_10.xlsx
+
+      # Pas de bloc "cluster" : les tâches notebook tournent en serverless.
+      tasks:
+        # Tâche 1 : crée le schéma, le volume et la table s'ils n'existent pas.
+        - task_key: setup
+          notebook_task:
+            notebook_path: ./setup/setup.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+
+        # Tâche 2 : ne démarre que si "setup" a réussi (graphe de dépendances).
+        - task_key: import
+          depends_on:
+            - task_key: setup
+          notebook_task:
+            notebook_path: ./jobs/import_budget.py
+
+      # Si le job échoue, Databricks t'envoie un e-mail (adresse de ton compte).
+      email_notifications:
+        on_failure:
+          - ${workspace.current_user.userName}
