@@ -1,0 +1,18 @@
+# Configuration d'exécution de l'application sur Databricks Apps.
+# À placer dans webapp/ (à côté de package.json).
+#
+# Au déploiement, Databricks lance "npm install" puis "npm run build",
+# et démarre l'application avec la commande ci-dessous.
+
+command: ["npm", "run", "start"]
+
+env:
+  # "valueFrom" = la valeur vient d'une ressource déclarée dans databricks.yml
+  - name: DATABRICKS_JOB_ID
+    valueFrom: app-job        # → l'ID du job import_budget
+  - name: VOLUME_PATH
+    valueFrom: app-volume     # → /Volumes/workspace/portail/fichiers
+
+# Injectées automatiquement par Databricks Apps, rien à déclarer :
+#   DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET (service principal de l'app)
+#   DATABRICKS_APP_PORT (port d'écoute, utilisé par le script "start")
