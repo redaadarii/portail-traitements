@@ -19,7 +19,7 @@ targets:
     mode: development
     default: true
     workspace:
-      host: https://<ton-url-workspace>.cloud.databricks.com
+      host: https://dbc-18ef0795-e41e.cloud.databricks.com
 
 resources:
   jobs:
@@ -47,6 +47,7 @@ resources:
         - task_key: import
           depends_on:
             - task_key: setup
+          max_retries: 0          # une erreur de données ne se corrige pas en relançant
           notebook_task:
             notebook_path: ./jobs/import_budget.py
 
